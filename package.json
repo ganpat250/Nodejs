@@ -1,0 +1,23 @@
+{
+  "name": "my-first-node-app",
+  "version": "1.0.0",
+  "description": "This is my first node.js app which i wil be learning node+mysql combo in this app",
+  "license": "ISC",
+  "author": "Anomynous",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.19.3",
+    "mysql": "^2.18.1",
+    "mysql2": "^3.15.3",
+    "nodemon": "^3.1.10"
+  }
+}
