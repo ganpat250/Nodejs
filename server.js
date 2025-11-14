@@ -1,7 +1,8 @@
 import e from "express";
 import mysql from "mysql2";
 import { configDotenv } from "dotenv";
-
+import jwt from "jsonwebtoken";
+import bcrypt from "bcryptjs";
 const app = e();
 app.use(e.json());
 configDotenv();
@@ -17,7 +18,43 @@ connection.connect((error) => {
   }
   console.log("✅DB connection successfully✅");
 });
-app.get("/", (req, res) => {
+const authMiddleware = (req, res, next) => {
+  const token = req.headers["authorization"];
+  if (!token) {
+    return res.status(403).json({ message: "No token provided" });
+  }
+  jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
+    if (error) {
+      return res.status(401).json({ message: "Invalid token" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
+app.post("/login",(req, res) => {
+  const { username, password } = req.body;
+  const correctUser = "Ganza Patrick";
+  const correctPass = "anomynous";
+
+  if (username !== correctUser || password !== correctPass) {
+    return res.status(401).send("Login Failed: wrong username or password");
+  }
+  const token = jwt.sign(
+    {
+      username: username,
+      role: "admin",
+    },
+    process.env.JWT_SECRET,
+    {
+      expiresIn: "1h",
+    }
+  );
+  res.status(200).json({
+    message: "Login successfully",
+    token: token,
+  });
+});
+app.get("/",authMiddleware, (req, res) => {
   res.json({
     message: "⭐Welcome to Student Management System⭐",
     brief: "In this system you perform the following operations:",
@@ -30,7 +67,7 @@ app.get("/", (req, res) => {
     ],
   });
 });
-app.post("/add-student", (req, res) => {
+app.post("/add-student",authMiddleware, (req, res) => {
   const { full_names, age, sex, city } = req.body;
   if (!full_names || !age || !sex || null) {
     return res.status(400).send("⛔Missing data or invalid credentials⛔");
@@ -50,7 +87,7 @@ app.post("/add-student", (req, res) => {
       );
   });
 });
-app.get("/students", (req, res) => {
+app.get("/students",authMiddleware,(req, res) => {
   const sql = "SELECT * FROM `Students`;";
   connection.query(sql, (error, result) => {
     if (error) {
@@ -67,7 +104,7 @@ app.get("/students", (req, res) => {
     });
   });
 });
-app.get("/students/:id", (req, res) => {
+app.get("/students/:id",authMiddleware,(req, res) => {
   const studID = req.params.id;
   const sql = "SELECT * FROM `Students` WHERE id = ?;";
   const value = [studID];
@@ -86,34 +123,36 @@ app.get("/students/:id", (req, res) => {
     });
   });
 });
-app.put("/update-student/:id", (req, res) => {
+app.put("/update-student/:id",authMiddleware,(req, res) => {
   const studID = req.params.id;
   const { full_names, age, sex, city } = req.body;
   const sql =
     "UPDATE `Students` SET `full_names` = ?, `age` = ? , `sex` = ?, `City` = ? WHERE id = ?";
-  const values = [full_names, age, sex, city,studID];
-  connection.query(sql,values,(error,result)=>{
-    if(error){
-      return res.status(500).send("⛔Update Failed,Try Again⛔:\n" + error)
+  const values = [full_names, age, sex, city, studID];
+  connection.query(sql, values, (error, result) => {
+    if (error) {
+      return res.status(500).send("⛔Update Failed,Try Again⛔:\n" + error);
     }
-    res.status(201).send(`✅Update operation for student_id:${studID} went successfully✅`);
-  })
+    res
+      .status(201)
+      .send(`✅Update operation for student_id:${studID} went successfully✅`);
+  });
 });
-app.delete("/delete-student/:id",(req,res)=>{
+app.delete("/delete-student/:id",authMiddleware,(req, res) => {
   const studID = req.params.id;
-  const sql = "DELETE FROM `Students` WHERE id = ?;"
-  connection.query(sql,[studID],(error,result)=>{
-    if(error){
+  const sql = "DELETE FROM `Students` WHERE id = ?;";
+  connection.query(sql, [studID], (error, result) => {
+    if (error) {
       return res.status(500).send("⛔Delete failed⛔:\n" + error);
     }
-    if(result.affectedRows === 0){
+    if (result.affectedRows === 0) {
       return res.status(404).send("⛔Student Not Found, Try Again⛔");
     }
     res.status(200).json({
       message: "✅Delete operation went successfully✅",
-      insertId: result.info
+      insertId: result.info,
     });
-  })
+  });
 });
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, (error) => {
