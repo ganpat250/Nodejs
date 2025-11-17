@@ -2,7 +2,6 @@ import e from "express";
 import mysql from "mysql2";
 import { configDotenv } from "dotenv";
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
 const app = e();
 app.use(e.json());
 configDotenv();
@@ -19,42 +18,49 @@ connection.connect((error) => {
   console.log("✅DB connection successfully✅");
 });
 const authMiddleware = (req, res, next) => {
-  const token = req.headers["authorization"];
+  const token = req.headers["token"];
   if (!token) {
-    return res.status(403).json({ message: "No token provided" });
+    return res.status(404).json({
+      message: "⛔Access Denied⛔",
+      error: "Authorization token not found!!!!",
+    });
   }
-  jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
+  jwt.verify(token,process.env.JWT_SECRET,(error, decoded) => {
     if (error) {
-      return res.status(401).json({ message: "Invalid token" });
+      return res.status(401).json({
+        message: "⛔Access Denied⛔",
+        error: "Invalid authorization token!!!!",
+      });
     }
     req.user = decoded;
     next();
   });
 };
-app.post("/login",(req, res) => {
+app.post("/login", (req, res) => {
   const { username, password } = req.body;
-  const correctUser = "Ganza Patrick";
-  const correctPass = "anomynous";
-
+  const correctUser = "admin";
+  const correctPass = "12345";
   if (username !== correctUser || password !== correctPass) {
-    return res.status(401).send("Login Failed: wrong username or password");
+    return res
+      .status(401)
+      .send("⛔Login error⛔:invalid username or password!!!");
   }
   const token = jwt.sign(
     {
       username: username,
-      role: "admin",
+      role: "admin"
     },
     process.env.JWT_SECRET,
     {
-      expiresIn: "1h",
+      expiresIn: "24h",
     }
   );
   res.status(200).json({
-    message: "Login successfully",
+    message: "✅Login successfully✅ you can now interact with the system!!!!",
     token: token,
   });
 });
-app.get("/",authMiddleware, (req, res) => {
+app.get("/",authMiddleware,(req, res) => {
   res.json({
     message: "⭐Welcome to Student Management System⭐",
     brief: "In this system you perform the following operations:",
@@ -67,7 +73,7 @@ app.get("/",authMiddleware, (req, res) => {
     ],
   });
 });
-app.post("/add-student",authMiddleware, (req, res) => {
+app.post("/add-student",authMiddleware,(req, res) => {
   const { full_names, age, sex, city } = req.body;
   if (!full_names || !age || !sex || null) {
     return res.status(400).send("⛔Missing data or invalid credentials⛔");
@@ -87,7 +93,7 @@ app.post("/add-student",authMiddleware, (req, res) => {
       );
   });
 });
-app.get("/students",authMiddleware,(req, res) => {
+app.get("/students",authMiddleware, (req, res) => {
   const sql = "SELECT * FROM `Students`;";
   connection.query(sql, (error, result) => {
     if (error) {
@@ -104,7 +110,7 @@ app.get("/students",authMiddleware,(req, res) => {
     });
   });
 });
-app.get("/students/:id",authMiddleware,(req, res) => {
+app.get("/students/:id",authMiddleware, (req, res) => {
   const studID = req.params.id;
   const sql = "SELECT * FROM `Students` WHERE id = ?;";
   const value = [studID];
@@ -157,7 +163,7 @@ app.delete("/delete-student/:id",authMiddleware,(req, res) => {
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, (error) => {
   if (error) {
-    return console.log(`⛔Error running on port:${PORT}⛔`);
+    return console.log(`⛔Error running on port:${PORT}⛔` + error);
   }
   console.log(`✅server is running on port:${PORT}`);
 });
