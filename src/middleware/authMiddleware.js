@@ -12,7 +12,7 @@ export const authMiddleware = (req, res, next) => {
     if (error) {
       return res.status(401).json({
         message: "❌Access denied❌",
-        details: "Authorization invalid token!!!!",
+        details: "Authorization invalid or expired token!!!!!",
       });
     }
     req.user = decoded;
