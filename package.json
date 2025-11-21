@@ -1,7 +1,7 @@
 {
-  "name": "my-first-node-app",
+  "name": "my-first-node+mysql-app",
   "version": "1.0.0",
-  "description": "This is my first node.js app which i wil be learning node+mysql combo in this app",
+  "description": "This is my first node.js app which i wil be learning node+mysql combo in my software development course!!!!",
   "license": "ISC",
   "author": "Anomynous",
   "type": "module",

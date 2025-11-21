@@ -1,108 +1,106 @@
-import { connection } from "../config/db.js";
-export const Home = (req, res) => {
-  res.json({
-    message: "⭐Welcome to Student Management System⭐",
-    brief: "In this system you perform the following operations:",
-    operations: [
-      "1.Register a student",
-      "2.See all students in the system",
-      "3.See a student by using his id",
-      "4.Update the information of students",
-      "5.deleting a student",
+import connection from "../config/db.js";
+export const Home = (req,res)=>{
+res.json({
+    message: "Welcome to student management system",
+    features: [
+        "1.Create a student: http://localhost:8080/add-student using POST method!!",
+        "2.View all students: http://localhost:8080/students using GET method!!",
+        "3.View one student: http://localhost:8080/student/{student_id} using GET method",
+        "4.Update student info: http://localhost:8080/update-student/{student_id} using PUT method",
+        "5.Delete a student: http://localhost:8080/delete-student/{student_id} using DELETE method"
     ],
-  });
-};
+    Notice: "Its Required to login via http://localhost:8080/login to get an authorization token!!!"
 
-export const addStudent = (req, res) => {
-  const { full_names, age, sex, city } = req.body;
-  if (!full_names || !age || !sex) {
-    return res.status(400).send("⛔Missing data or invalid credentials⛔");
-  }
-  const sql =
-    "INSERT INTO `Students`(`full_names`,`age`,`sex`,`City`) VALUES(?,?,?,?);";
-  const values = [full_names, age, sex, city];
-  connection.query(sql, values, (error, result) => {
-    if (error) {
-      return res.status(500).send("⛔Error while inserting in DB⛔ \n" + error);
-    }
-    res
-      .status(201)
-      .send(
-        "✅Student Registered successfully✅:" +
-          ` Insert ID :${result.insertId}`
-      );
-  });
+});
 };
-
-export const getStudents = (req,res)=>{
-  const sql = "SELECT * FROM `Students`;";
-  connection.query(sql, (error, result) => {
-    if (error) {
-      return res
-        .status(500)
-        .send("⛔Error fetching data in DB!!!!!⛔\n" + error);
+export const addStudent = (req,res)=>{
+    const { full_names,age,sex,city } = req.body;
+    if(!full_names || !age || !sex){
+        return res.status(404).send("Error: missing full names,age or sex");
     }
-    if (result.length === 0) {
-      return res.status(404).send("⛔DB is empty!!!!⛔");
-    }
-    res.status(200).json({
-      message: "✅Students fetched successfully✅",
-      results: result,
+    const sql = "INSERT INTO `Students`(`full_names`,`age`,`sex`,`City`) VALUES(?,?,?,?);";
+    const values = [full_names,age,sex,city];
+    connection.query(sql,values,(error,result)=>{
+        if(error){
+            return res.status(500).json({
+                message: "Adding student failed:",
+                error: error.sqlMessage
+            });
+        }
+        res.status(201).json({
+            message: `Student Created successfully, id:${result.insertId}`,
+        });
     });
-  });
 };
-
-export const getStudentsById = (req,res)=>{
-  const studID = req.params.id;
-  const sql = "SELECT * FROM `Students` WHERE id = ?;";
-  const value = [studID];
-  connection.query(sql, value, (error, result) => {
-    if (error) {
-      return res
-        .status(500)
-        .send("⛔Error retrieving a student in DB⛔:\n" + error);
-    }
-    if (result.length === 0) {
-      return res.status(404).send("⛔Student Not Found,Try Again⛔");
-    }
-    res.status(200).json({
-      message: "✅Student Retrieved Successfully✅",
-      results: result,
+export const getAllStudents = (req,res)=>{
+    const sql = "SELECT * FROM `Students`;";
+    connection.query(sql,(error,result)=>{
+        if(error){
+           return res.status(500).json({
+            message: "Error retrieving students",
+            error: error.sqlMessage
+           });
+        }
+        res.status(200).json({
+            message: "Student retrieved successfully",
+            result: result
+        });
     });
-  });  
 };
-
+export const getStudentById = (req,res)=>{
+    const id = req.params.id;
+    const sql = "SELECT * FROM `Students` WHERE id = ?;";
+    const value = [id];
+    connection.query(sql,value,(error,result)=>{
+        if(error){
+            return res.status(500).send("Error fetching students by id")
+        }else if(result.length === 0){
+            return res.status(404).send("Student Not Found!!")
+        }
+        res.status(200).json({
+            message: "Student retrieved successfully by id",
+            result: result
+        });
+    });
+};
 export const updateStudent = (req,res)=>{
-  const studID = req.params.id;
-  const { full_names, age, sex, city } = req.body;
-  const sql =
-    "UPDATE `Students` SET `full_names` = ?, `age` = ? , `sex` = ?, `City` = ? WHERE id = ?";
-  const values = [full_names, age, sex, city, studID];
-  connection.query(sql, values, (error, result) => {
-    if (error) {
-      return res.status(500).send("⛔Update Failed,Try Again⛔:\n" + error);
+    const id = req.params.id;
+    const { full_names,age,sex,city } = req.body;
+    if(!full_names || !age || !sex){
+        return res.status(500).send("Error: missing full names ,age or sex");
     }
-    if(result.affectedRows === 0){
-      return res.status(404).send("⛔Student Not Found⛔");
-    }
-    res
-      .status(201)
-      .send(`✅Update operation for student_id:${studID} went successfully✅`);
-  }); 
+    const sql = "UPDATE `Students` SET `full_names`= ?,`age`= ?,`sex`= ?, `City`= ? WHERE id = ?;"
+    const values = [full_names,age,sex,city,id];
+    connection.query(sql,values,(error,result)=>{
+        if(error){
+            return res.status(500).json({
+                message: "Error updating a student",
+                error: error.sqlMessage
+            });
+        }
+        if(result.affectedRows === 0){
+            return res.status(404).json({
+                message: "Error updating:",
+                error: "Student Not Found"
+            });
+        }
+        res.status(200).send("Update Operation went successfully");
+    });
 };
 export const deleteStudent = (req,res)=>{
-  const studID = req.params.id;
-  const sql = "DELETE FROM `Students` WHERE id = ?;";
-  connection.query(sql, [studID], (error, result) => {
-    if (error) {
-      return res.status(500).send("⛔Delete failed⛔:\n" + error);
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).send("⛔Student Not Found, Try Again⛔");
-    }
-    res.status(200).json({
-      message: "✅Delete operation went successfully✅",
-      DeletedId: studID
+    const id = req.params.id;
+    const sql = "DELETE FROM `Students` WHERE id = ?";
+    const value = [id];
+    connection.query(sql,value,(error)=>{
+        if(error){
+          return res.status(404).json({
+            message: "Error deleting a student",
+            error: error.sqlMessage
+          });  
+        }
+        res.status(200).json({
+            message: `Student deleted successfully, id:${id}`,
+        });
     });
-  });
+
 };

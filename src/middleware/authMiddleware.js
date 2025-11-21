@@ -1,21 +1,25 @@
 import jwt from "jsonwebtoken";
-export const authMiddleware = (req, res, next) => {
-  const authHeader = req.headers["authorization"];
-  if (!authHeader) {
-    return res.status(500).json({
-      message: "❌Access denied❌",
-      details: "Authorization token not found!!!!",
-    });
-  }
-  const token = authHeader.split(" ")[1];
-  jwt.verify(token, process.env.JWT_SECRET, (error, decoded) => {
-    if (error) {
-      return res.status(401).json({
-        message: "❌Access denied❌",
-        details: "Authorization invalid or expired token!!!!!",
-      });
+const authMiddleware = (req,res,next)=>{
+    const authHeader = req.headers['authorization'];
+    if(!authHeader){
+        return res.status(401).json({
+            message: "Access denied",
+            error: "Authorization token not found!!",
+            solution: "Go to http://localhost:8080/login to get a token!!!"
+        });
     }
-    req.user = decoded;
-    next();
-  });
-};
+    const token = authHeader.split(" ")[1];
+    jwt.verify(token,process.env.JWT_SECRET,(error,decoded)=>{
+        if(error){
+            return res.status(401).json({
+                message: "Access Denied",
+                error: "Invalid or expired token!!!",
+                details: error,
+                solution: "Go to http://localhost:8080/login to get a new token!!!"                
+            });
+        }
+        req.user = decoded;
+        next();
+    });
+}
+export default authMiddleware;
